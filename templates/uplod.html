@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uplod video</title>
+    <style>
+        body {
+        margin: 0;
+        padding: 0;
+        }
+
+        .upper_bar {
+            width: 100%;
+            height: fit-content;
+            background-color: black;
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .upper_bar button{
+            margin: 5px;
+            padding: 5px;
+            color: blue;
+        }
+
+        .upper_bar div, .upper_bar div p {
+            display: inline;
+        }
+        
+        .upper_bar div p {
+            color: white;
+            font-size: 30px;
+        }
+        .main{
+            background-color: rgb(216, 216, 216);
+            min-height: 700px;
+            width: 100%;
+        }
+
+        .submain {
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+        }
+        h3 {
+            margin-bottom: 0;
+        }
+        
+        .submit {
+            width: 200px;
+            margin-top: 5px;
+            font-size: 21px;
+        }
+    </style>
+</head>
+<body>
+    <div class="upper_bar">
+        <div>
+            <p>{{ name[0] }}</p>
+        </div>
+    </div>
+    <div class="main">
+        <div class="submain">
+            <form action="/uploadmethod" method="post" enctype="multipart/form-data">
+                <h3>The owner</h3>
+                <br>
+                <select name="owener" style="width:200px;">
+                    {% for one in nick %}
+                    <option value="{{one}}">{{ one }}</option>
+                    {% endfor %}
+                </select>
+                <br>
+                <h3>Insert File</h3>
+                <br>
+                <input type="file" name="file" required/>
+                <br>
+                <button type="submit" class="submit">uplod</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

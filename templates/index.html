@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database</title>
+    <style>
+        body {
+        margin: 0;
+        padding: 0;
+        }
+
+        .upper_bar {
+            width: 100%;
+            height: fit-content;
+            background-color: black;
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .upper_bar button{
+            margin: 5px;
+            padding: 5px;
+            color: blue;
+        }
+
+        .upper_bar div, .upper_bar div p {
+            display: inline;
+        }
+        
+        .upper_bar div p {
+            color: white;
+            font-size: 30px;
+        }
+        .main{
+            background-color: rgb(216, 216, 216);
+            min-height: 700px;
+            width: 100%;
+        }
+
+        .submain {
+            padding: 40px;
+        }
+
+        video {
+            margin-right: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div class="upper_bar">
+        <div>
+            <p>{{ re }}</p>
+        </div>
+        <div>
+            <form action="/Sign_in" method="post" style="display: inline">
+                <button type="submit">Sign in </button>
+            </form>
+            </form>
+            <form action="/Sign_in" method="post" style="display: inline">
+                <button type="submit">Sign up</button>
+            </form>
+            <form action="/uplod" method="post" style="display: inline">
+                <button type="submit">Add content</button>
+            </form>
+        </div>
+    </div>
+    <div class="main">
+        <div class="submain">
+        {% for one in vid %}
+        <video width="400px" height="225px" controls="controls" preload="preload">
+            <source src="{{ one.source }}" type="video/mp4">
+        </video>
+        {% endfor %}
+        </div>
+    </div>
+    
+</body>
+</html>
