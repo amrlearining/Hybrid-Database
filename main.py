@@ -31,11 +31,11 @@ def uplod():
     
     if cursor:
         cursor.execute("SELECT fname FROM users")
-        name = cursor.fetchone()
+        name = cursor.fetchall()
 
     if cursor:
         cursor.execute("SELECT nickname FROM users")
-        nick = cursor.fetchone()
+        nick = cursor.fetchall()
         cursor.close()
     
     db.close()

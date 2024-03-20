@@ -57,7 +57,7 @@
 <body>
     <div class="upper_bar">
         <div>
-            <p>{{ name[0] }}</p>
+            <p>{{ name[0][0] }}</p>
         </div>
     </div>
     <div class="main">
@@ -67,7 +67,7 @@
                 <br>
                 <select name="owener" style="width:200px;">
                     {% for one in nick %}
-                    <option value="{{one}}">{{ one }}</option>
+                    <option value="{{one}}">{{ one[0] }}</option>
                     {% endfor %}
                 </select>
                 <br>
