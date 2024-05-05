@@ -67,11 +67,11 @@
     </div>
     <div class="main">
         <div class="submain">
-        {% for one in vid %}
-        <video width="400px" height="225px" controls="controls" preload="preload">
-            <source src="{{ one.source }}" type="video/mp4">
-        </video>
-        {% endfor %}
+            {% for video in videos %}
+                <video width="400px" height="225px" controls="controls" preload="preload">
+                    <source src="data:video/mp4;base64,{{ video }}" type="video/mp4">
+                </video>
+            {% endfor %}
         </div>
     </div>
     

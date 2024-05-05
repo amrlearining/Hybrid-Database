@@ -1,34 +1,48 @@
-import os
+import base64
 from flask import Flask, redirect, render_template, request, url_for
-import json
+import gridfs
 import mysql.connector
-
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
+# flask app define
 app = Flask(__name__, static_url_path='', static_folder='static')
-
+# data to fetch and deal with mongodb
 data = []
 
-# Routes
+# main route
 @app.route('/')
 def main():
-    nosqlDB_connection()
+    # connection with relational database
     db = RDB_connection()
     cursor = db.cursor()
-    
+    #select The user name
     if cursor:
         cursor.execute("SELECT fname FROM users WHERE id = 1")
         result = cursor.fetchone()
-        print(result)
         cursor.close()
-    
     db.close()
-    return render_template('index.html', re=result[0], vid=data)
 
+    # mongodb connection
+    mongodb = MongoDBConnection()
+    # fs to uplod and fetch videos
+    fs = gridfs.GridFS(mongodb, collection="files")
+    videos = []
+    files = fs.find()
+    for file in files:
+        # Read the video file and encode it in Base64
+        video_data = file.read()
+        video_base64 = base64.b64encode(video_data).decode('utf-8')
+        videos.append(video_base64)
+    # run index page with information and streaming data    
+    return render_template('index.html', re=result[0], videos=videos)
+    
+# uplod route come from index.html
 @app.route('/uplod', methods=['GET', 'POST'])
 def uplod():
-    nosqlDB_connection()
+    # mongodb and sql connections
     db = RDB_connection()
     cursor = db.cursor()
-    
+    # users to use it in save method
     if cursor:
         cursor.execute("SELECT fname FROM users")
         name = cursor.fetchall()
@@ -37,57 +51,54 @@ def uplod():
         cursor.execute("SELECT nickname FROM users")
         nick = cursor.fetchall()
         cursor.close()
-    
     db.close()
+    # response with uplod.html page
     return render_template('uplod.html', name=name, nick=nick)
 
+# route come from uplod button from uplod.html page
 @app.route('/uploadmethod', methods=['POST'])
 def uploadmethod():
+    #check if there are file
     if 'file' not in request.files:
         return 'No file part'
-
+    # save file data in file 
     file = request.files['file']
 
     if file.filename == '':
         return 'No selected file'
 
-    upload_folder = 'static/'
-    if not os.path.exists(upload_folder):
-        os.makedirs(upload_folder)
-    
-    file_path = os.path.join(upload_folder, file.filename)
-    file.save(file_path)
-
-    # data id
+    # fetch data[] from mongodb
     global data
     try:
-        with open('nosql.json', 'r') as jfile:
-            data = json.load(jfile)
+        mongodb = MongoDBConnection()
     except FileNotFoundError:
         data = []
 
-    last_item = data[-1]
-    id = int(last_item['id']) + 1
-
-    # owner id
+    # connect to sql
     db = RDB_connection()
+    #cursor = db.cursor()
+
+    # Save the Video to mongodb
+    dataFile = file.read()
+    fs = gridfs.GridFS(
+        mongodb, 
+        collection="files") 
+    oid = str(save_data_toMongoDB(dataFile, file.filename, fs))
+
+    # save file name with owner idand object id in sql
     cursor = db.cursor()
-
     if cursor:
-        cursor.execute("SELECT id FROM users WHERE nickname = %s", (request.form['owener'],))
-        oid = cursor.fetchone()
-        cursor.close()
+        nick = request.form['owener'][2:-3]
+        cursor.execute("SELECT id FROM users WHERE nickname = %s", (nick,))
+        uid = cursor.fetchone()
     
-    # Save the file name to a JSON file
-    data.append({"id": id, "source": file.filename, "owner_id": oid[0]})
-
-    json_file_path = 'nosql.json'
-    with open(json_file_path, 'w') as json_file:
-        json.dump(data, json_file)
-
+    if cursor:
+        user_id = uid[0]
+        cursor.execute("INSERT INTO videodata(oid, file_name, owner_id) VALUES(%s, %s, %s)", (oid, file.filename, user_id))        
+        cursor.close()
+    # redirect to main 'index.html' page
     return redirect(url_for('main'))
-
-
+    
 # Connect to the relational database
 def RDB_connection():
     try:
@@ -102,19 +113,27 @@ def RDB_connection():
         print("Error connecting to the database:", error)
         return None
 
-# Other methods
-def nosqlDB_connection():
-    global data
+# Mongodb connection
+def MongoDBConnection():
+    uri = "mongodb+srv://database_user:database_user123@database.x9gzvlv.mongodb.net/?retryWrites=true&w=majority&appName=database"
+    # Create a new client and connect to the server
+    client = MongoClient(uri, server_api=ServerApi('1'))
+    # Send a ping to confirm a successful connection
     try:
-        with open('nosql.json', 'r') as jfile:
-            data = json.load(jfile)
-    except FileNotFoundError:
-        data = []
+        client.admin.command('ping')
+        print("Pinged your deployment. You successfully connected to MongoDB!")
+        collection = client.Hybrid_database.data
+        global data
+        data = collection.find()
+        db = client.Hybrid_database
+        return db
+    except Exception as e:
+        print(e)
 
-def save_data_tonosqlDB():
-    with open('nosql.json', 'w') as jfile:
-        json.dump(data, jfile, indent=4)
+def save_data_toMongoDB(dataFile, file_name, fs):
+    # put file to mongodb
+    return fs.put(dataFile, filename=file_name)
 
-
+# main method
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
