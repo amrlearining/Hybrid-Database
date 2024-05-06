@@ -35,6 +35,7 @@ def main():
         videos.append(video_base64)
     # run index page with information and streaming data    
     return render_template('index.html', re=result[0], videos=videos)
+
     
 # uplod route come from index.html
 @app.route('/uplod', methods=['GET', 'POST'])
@@ -76,7 +77,7 @@ def uploadmethod():
 
     # connect to sql
     db = RDB_connection()
-    #cursor = db.cursor()
+    cursor = db.cursor()
 
     # Save the Video to mongodb
     dataFile = file.read()
@@ -84,18 +85,23 @@ def uploadmethod():
         mongodb, 
         collection="files") 
     oid = str(save_data_toMongoDB(dataFile, file.filename, fs))
-
     # save file name with owner idand object id in sql
     cursor = db.cursor()
-    if cursor:
-        nick = request.form['owener'][2:-3]
-        cursor.execute("SELECT id FROM users WHERE nickname = %s", (nick,))
-        uid = cursor.fetchone()
+    try:
+        if cursor:
+            nick = request.form['owener'][2:-3]
+            cursor.execute("SELECT id FROM users WHERE nickname = %s", (nick,))
+            uid = cursor.fetchone()
+            if uid:
+                user_id = uid[0]
+                cursor.execute("INSERT INTO videodata(oid, file_name, owner_id) VALUES(%s, %s, %s)", (oid, file.filename, user_id))
+                db.commit()  # Commit the transaction
+                cursor.close()
+            else:
+                print("Owner not found")
+    except mysql.connector.Error as err:
+        print("MySQL Error: {}".format(err))
     
-    if cursor:
-        user_id = uid[0]
-        cursor.execute("INSERT INTO videodata(oid, file_name, owner_id) VALUES(%s, %s, %s)", (oid, file.filename, user_id))        
-        cursor.close()
     # redirect to main 'index.html' page
     return redirect(url_for('main'))
     
